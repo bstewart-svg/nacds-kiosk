@@ -81,6 +81,21 @@ slide wraps to the title.
 animates or flashes; it's just ready for the next visitor. There's no auto-advancing
 attract loop — use `NACDS_PPT_2026_Auto.mp4` if you want an unattended video loop.
 
+**Auto Play** — the pill centred along the bottom starts the Vimeo loop
+(`vimeo.com/1218544080`) full-screen. While it runs, a replica of the
+`OVERVIEW / STATIONS / AXONA` pill stays on screen so staff can break straight
+into any section, plus a `■ STOP` button. Any touch anywhere also drops out into
+manual control at the current slide.
+
+The control is hidden on station pages (11–20), whose cards run to the bottom
+edge with no clear space. Step back out to the hub and it returns.
+
+> The loop streams from Vimeo, so unlike the rest of the deck **it needs a live
+> connection** — it is the one thing the offline cache can't hold. If the video
+> can't be reached the deck says so rather than showing a black rectangle.
+> To change the video, edit `VIMEO_ID` near the bottom of the `<script>` in
+> `rebuild.py` and rebuild.
+
 **Keyboard** (for testing): arrows / space to move, `Home` for the title, `f` full-screen.
 
 ---
@@ -107,8 +122,12 @@ git commit -am "update tap targets" && git push
 
 GitHub Pages redeploys in about a minute.
 
-> **Bump `CACHE` in `sw.js`** whenever you change any asset — panels that already cached
-> the old version will keep serving it until the cache name changes.
+`index.html` and `sw.js` are fetched **network-first**, so code and layout changes reach
+a panel on its next load with nothing to remember. Slides and videos are cache-first.
+
+> **Bump `CACHE` in `sw.js`** when you replace an image or video *under its existing
+> name* — panels that already cached it will otherwise keep serving the old file
+> forever. Giving the new asset a new filename avoids this entirely.
 
 **A slide's design changed** → re-export from PowerPoint at 3840 × 2160 (File → Export →
 PNG → Save Every Slide), rename to `slide-NN.png`, drop it in `slides/`, update that
