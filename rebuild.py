@@ -50,6 +50,11 @@ HTML = r"""<!DOCTYPE html>
 <meta name="robots" content="noindex,nofollow">
 <title>Capsa Healthcare &mdash; RoboPharma Central Fill</title>
 <style>
+  @font-face{
+    font-family:'IBM Plex Mono';
+    src:url('fonts/IBMPlexMono-Regular.woff2') format('woff2');
+    font-weight:400;font-style:normal;font-display:swap;
+  }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{
     width:100%;height:100%;overflow:hidden;background:#000;
@@ -114,6 +119,48 @@ HTML = r"""<!DOCTYPE html>
   }
   body.cache #cache{display:block}
   #cache.done{background:rgba(22,120,60,.9)}
+
+  /* ---- auto-play video layer ---- *
+     The Vimeo loop covers the whole stage. The deck's own nav pill is painted
+     into the slide artwork, and there is no artwork on screen while the video
+     runs -- so the overlay below is an HTML replica of it, matched to the
+     deck's type and colour. */
+  #auto{position:absolute;inset:0;z-index:5;display:none;background:#000}
+  #auto.on{display:block}
+  #auto iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+
+  .deckpill{
+    position:absolute;z-index:7;display:flex;align-items:center;
+    background:rgba(13,27,42,.88);border-radius:6vmin;
+    font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+    font-size:1.32vmin;letter-spacing:.24em;text-transform:uppercase;
+    color:#fff;white-space:nowrap;
+  }
+  .deckpill button{
+    border:0;background:transparent;color:inherit;font:inherit;letter-spacing:inherit;
+    padding:1.15vmin 2.1vmin;border-radius:6vmin;cursor:pointer;
+    -webkit-appearance:none;appearance:none;
+  }
+  .deckpill button.on{background:#F39C12;color:#12233A}
+  .deckpill button:active{background:rgba(243,156,18,.65);color:#12233A}
+
+  /* Start control. Centred along the bottom: the left corner carries the Capsa
+     logo lockup and the right carries the deck's own nav pill, so the middle is
+     the only strip that is clear on every overview slide. */
+  #autobtn{left:50%;transform:translateX(-50%);bottom:2.4%}
+  #autobtn.hide{display:none}
+  /* nav replica, sitting where the artwork's pill sits */
+  #autonav{right:5.6%;bottom:5.4%;display:none}
+  #autonav.on{display:flex}
+
+  /* shown if the Vimeo player can't be reached */
+  #autoerr{
+    position:absolute;inset:0;z-index:6;display:none;
+    align-items:center;justify-content:center;text-align:center;
+    background:#0d1b2a;color:#fff;padding:0 12vw;
+    font:400 1.7vmin/1.7 'IBM Plex Mono',ui-monospace,monospace;letter-spacing:.1em;
+  }
+  #autoerr.on{display:flex}
 </style>
 </head>
 <body>
@@ -132,6 +179,17 @@ HTML = r"""<!DOCTYPE html>
        blocks one local file from reading another.</p>
   </div>
   <div id="cache">Caching &hellip;</div>
+
+  <div id="auto"></div>
+  <div id="autoerr">The auto-play video needs a network connection.<br>Tap a section below to browse the deck instead.</div>
+
+  <div class="deckpill" id="autobtn"><button type="button" id="autostart">&#9654; Auto Play</button></div>
+  <div class="deckpill" id="autonav">
+    <button type="button" data-to="2">Overview</button>
+    <button type="button" data-to="10">Stations</button>
+    <button type="button" data-to="21">Axona</button>
+    <button type="button" id="autostop">&#9632; Stop</button>
+  </div>
 </div>
 
 <script>
@@ -206,6 +264,14 @@ function go(n){
   }
 
   drawHotspots(s);
+  updateAutoBtn(n);
+}
+
+/* Station pages (11-20) carry full-width cards along the bottom edge, so there
+   is nowhere clear to sit. The control returns as soon as you step back out. */
+function updateAutoBtn(n){
+  if (playing) return;
+  autoBtn.classList.toggle('hide', n >= 11 && n <= 20);
 }
 
 function next(){
@@ -235,11 +301,93 @@ function drawHotspots(s){
   hots.appendChild(frag);
 }
 
+/* ---------- auto-play loop ---------- *
+ * background=1 gives a bare looping player with no Vimeo controls, title or
+ * byline -- the closest thing to a plain video wall. It implies muted, which
+ * autoplay requires anyway.                                                   */
+var VIMEO_ID  = '1218544080';
+var VIMEO_SRC = 'https://player.vimeo.com/video/' + VIMEO_ID +
+                '?background=1&autoplay=1&loop=1&muted=1&autopause=0&dnt=1';
+
+var autoEl   = document.getElementById('auto'),
+    autoErr  = document.getElementById('autoerr'),
+    autoBtn  = document.getElementById('autobtn'),
+    autoNav  = document.getElementById('autonav'),
+    playing  = false;
+
+function enterAuto(){
+  if (playing) return;
+  playing = true;
+
+  if (!autoEl.firstChild){
+    var f = document.createElement('iframe');
+    f.src = VIMEO_SRC;
+    f.allow = 'autoplay; fullscreen';
+    f.setAttribute('frameborder','0');
+    f.setAttribute('title','Capsa RoboPharma auto-play loop');
+    f.onerror = function(){ autoErr.classList.add('on'); };
+    autoEl.appendChild(f);
+    // If the player never reports in, surface the offline notice rather than
+    // leaving a black rectangle on the booth wall.
+    setTimeout(function(){
+      if (playing && !window.__vimeoAlive) autoErr.classList.add('on');
+    }, 8000);
+  }
+
+  autoEl.classList.add('on');
+  autoNav.classList.add('on');
+  autoBtn.style.display = 'none';
+  if (bg) { try { bg.pause(); } catch(e){} }
+}
+
+function exitAuto(n){
+  if (!playing) return;
+  playing = false;
+  autoEl.classList.remove('on');
+  autoErr.classList.remove('on');
+  autoNav.classList.remove('on');
+  autoBtn.style.display = '';
+  // Tear the iframe down so the video stops rather than playing on unseen.
+  autoEl.textContent = '';
+  window.__vimeoAlive = false;
+  if (n){ cur = 0; go(n); } else { restoreCurrent(); }
+}
+
+function restoreCurrent(){
+  var n = cur; cur = 0; go(n || CFG.homeSlide);
+}
+
+// Vimeo posts messages once its player is live; use that as the health check.
+window.addEventListener('message', function(e){
+  if (typeof e.origin === 'string' && e.origin.indexOf('vimeo.com') !== -1){
+    window.__vimeoAlive = true;
+    autoErr.classList.remove('on');
+  }
+});
+
+document.getElementById('autostart').addEventListener('click', function(e){
+  e.stopPropagation(); touched(); enterAuto();
+});
+document.getElementById('autostop').addEventListener('click', function(e){
+  e.stopPropagation(); touched(); exitAuto(0);
+});
+[].forEach.call(autoNav.querySelectorAll('button[data-to]'), function(b){
+  b.addEventListener('click', function(e){
+    e.stopPropagation(); touched();
+    exitAuto(parseInt(b.getAttribute('data-to'),10));
+  });
+});
+
 /* ---------- input: tap background = next, tap target = jump ---------- */
-stage.addEventListener('click', function(){ touched(); next(); });
+stage.addEventListener('click', function(){
+  touched();
+  if (playing) { exitAuto(0); return; }   // any touch takes manual control
+  next();
+});
 
 document.addEventListener('keydown', function(e){
   var k = e.key;
+  if (playing && k !== 'f'){ touched(); exitAuto(0); return; }
   if (k==='ArrowRight'||k==='PageDown'||k===' '){ touched(); next(); }
   else if (k==='ArrowLeft'||k==='PageUp'){ touched(); go(cur<=1 ? SLIDES.length : cur-1); }
   else if (k==='Home'){ touched(); go(CFG.homeSlide); }
@@ -252,7 +400,10 @@ document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
 /* ---------- idle reset ---------- */
 function touched(){
   clearTimeout(idleTimer);
-  idleTimer = setTimeout(function(){ go(CFG.homeSlide); }, CFG.idleSeconds * 1000);
+  idleTimer = setTimeout(function(){
+    if (playing) return;              // the loop is already the attract state
+    go(CFG.homeSlide);
+  }, CFG.idleSeconds * 1000);
 }
 
 /* ---------- fullscreen + wake lock ---------- */
