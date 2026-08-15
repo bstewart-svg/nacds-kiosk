@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0d1b2a">
+<meta name="robots" content="noindex,nofollow">
+<title>Capsa Healthcare &mdash; RoboPharma Central Fill</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{
+    width:100%;height:100%;overflow:hidden;background:#000;
+    -webkit-user-select:none;user-select:none;
+    overscroll-behavior:none;touch-action:manipulation;
+  }
+
+  /* The deck is a fixed 16:9 canvas, letterboxed into whatever panel it lands on. */
+  #stage{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:100vw;height:56.25vw;max-height:100vh;max-width:177.7778vh;
+    background:#000;overflow:hidden;
+  }
+
+  /* One shared video element sits behind the plates. Android caps how many
+     hardware decoders can exist at once; eight simultaneous <video> tags is
+     over that limit on this class of panel. One is always safe. */
+  #bg{
+    position:absolute;inset:0;width:100%;height:100%;
+    object-fit:cover;background:#0d1b2a;
+    opacity:0;transition:opacity .25s linear;
+  }
+  #bg.on{opacity:1}
+
+  /* Two plates, crossfaded, so a slide change never flashes black. */
+  .plate{
+    position:absolute;inset:0;width:100%;height:100%;
+    display:block;opacity:0;transition:opacity .3s ease;
+  }
+  .plate.on{opacity:1}
+
+  /* Invisible tap targets, sitting exactly on the artwork's own buttons.
+     No borders, no fills, no hover states -- the deck's design is the UI. */
+  #hots{position:absolute;inset:0;z-index:3}
+  .hot{
+    position:absolute;display:block;padding:0;border:0;
+    background:transparent;cursor:pointer;
+    -webkit-appearance:none;appearance:none;
+  }
+  body.debug .hot{background:rgba(243,156,18,.28);outline:1px solid #F39C12}
+
+  /* Shown only if the artwork cannot be read -- turns a blank screen into
+     something a person standing at the booth can act on. */
+  #err{
+    position:absolute;inset:0;z-index:9;display:none;
+    background:#0d1b2a;color:#fff;
+    font:400 clamp(13px,1.5vw,20px)/1.65 ui-monospace,Menlo,Consolas,monospace;
+    padding:8vh 10vw;
+  }
+  #err.on{display:block}
+  #err b{display:block;font-size:1.5em;margin-bottom:1em;font-weight:600}
+  #err code{color:#F39C12;word-break:break-all}
+  #err p{margin:.8em 0;opacity:.85}
+
+  /* Download readout for setup day. Hidden unless the URL carries ?cache,
+     so nothing shows on the floor. */
+  #cache{
+    position:absolute;left:50%;bottom:3vmin;transform:translateX(-50%);z-index:8;
+    display:none;padding:1.1vmin 2.4vmin;border-radius:5vmin;
+    background:rgba(12,22,38,.82);color:#fff;white-space:nowrap;
+    font:400 1.5vmin/1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.16em;
+  }
+  body.cache #cache{display:block}
+  #cache.done{background:rgba(22,120,60,.9)}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <video id="bg" muted playsinline webkit-playsinline preload="none" loop></video>
+  <img class="plate" id="p0" alt="">
+  <img class="plate" id="p1" alt="">
+  <div id="hots"></div>
+  <div id="err">
+    <b>The slide artwork didn't load.</b>
+    <p>The page itself opened, so this is a file-access problem, not a broken deck.</p>
+    <p>Tried to read: <code id="errsrc"></code></p>
+    <p>Fix: open this deck in <b>Fully Kiosk Browser</b> with "Local File Access"
+       enabled, or serve the folder over the network. Plain Chrome for Android
+       blocks one local file from reading another.</p>
+  </div>
+  <div id="cache">Caching &hellip;</div>
+</div>
+
+<script>
+/* ------------------------------------------------------------------ *
+ * Slide + hotspot table, inlined. See README for how to edit.
+ * ------------------------------------------------------------------ */
+var SLIDES = [{"n":1,"img":"slides/slide-01.jpg","title":"Title","h":[]},{"n":2,"img":"slides/slide-02.jpg","title":"Proven at scale","h":[{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]},{"n":3,"img":"slides/slide-03.jpg","title":"One central fill","h":[{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]},{"n":4,"img":"slides/slide-04.jpg","title":"Why we built it","h":[{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]},{"n":5,"img":"slides/slide-05.jpg","title":"Purpose-built","h":[{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]},{"n":6,"img":"slides/slide-06.jpg","title":"One wall","h":[{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]},{"n":7,"img":"slides/slide-07.jpg","title":"Gen 6 High-Volume Cell","h":[{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]},{"n":8,"img":"slides/slide-08.jpg","title":"Every form factor","h":[{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]},{"n":9,"img":"slides/slide-09.jpg","title":"Unit-of-Use","h":[{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]},{"n":10,"img":"slides/slide-10.jpg","title":"Ten stations","h":[{"x":5.62,"y":32.02,"w":21.8,"hh":4.67,"to":11,"l":"01 Vial Feeder & Labeling"},{"x":28.52,"y":32.02,"w":18.12,"hh":4.67,"to":12,"l":"02 RoboPharma HV Wall"},{"x":47.74,"y":32.02,"w":20.5,"hh":4.67,"to":13,"l":"03 Medium-Volume Filling"},{"x":5.62,"y":41.38,"w":19.4,"hh":4.67,"to":14,"l":"04 Manual Fill Station"},{"x":26.21,"y":41.3,"w":19.4,"hh":4.67,"to":15,"l":"05 Image Station (PV2)"},{"x":5.62,"y":50.75,"w":17.7,"hh":4.67,"to":16,"l":"06 Capping & Sealing"},{"x":24.31,"y":50.81,"w":13.44,"hh":4.67,"to":17,"l":"07 Unit-of-Use"},{"x":5.62,"y":60.12,"w":17.7,"hh":4.67,"to":18,"l":"08 Collation Station"},{"x":5.62,"y":69.48,"w":21.09,"hh":4.67,"to":19,"l":"09 Prescription Packaging"},{"x":5.62,"y":78.85,"w":16.4,"hh":4.67,"to":20,"l":"10 Auto-Sortation"},{"x":42.27,"y":79.53,"w":3.0,"hh":3.8,"to":11,"l":"1"},{"x":56.78,"y":64.4,"w":3.0,"hh":3.8,"to":12,"l":"2"},{"x":68.67,"y":46.54,"w":3.0,"hh":3.8,"to":13,"l":"3"},{"x":80.38,"y":43.11,"w":3.0,"hh":3.8,"to":14,"l":"4"},{"x":91.52,"y":42.64,"w":3.0,"hh":3.8,"to":15,"l":"5"},{"x":83.41,"y":55.59,"w":3.0,"hh":3.8,"to":16,"l":"6"},{"x":74.15,"y":64.24,"w":3.0,"hh":3.8,"to":18,"l":"8"},{"x":58.23,"y":80.38,"w":3.0,"hh":3.8,"to":17,"l":"7"},{"x":70.12,"y":67.67,"w":3.0,"hh":3.8,"to":19,"l":"9"},{"x":86.19,"y":68.73,"w":3.0,"hh":3.8,"to":20,"l":"10"},{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]},{"n":11,"img":"slides/slide-11.png","video":"video/station-11.mp4","poster":"video/poster-11.jpg","title":"01 Vial Feeder & Labeling","h":[{"x":5.54,"y":5.18,"w":7.7,"hh":3.8,"to":11,"l":"01  vial feeder"},{"x":15.28,"y":5.18,"w":7.7,"hh":3.8,"to":12,"l":"02 high-volume"},{"x":25.01,"y":5.18,"w":8.92,"hh":3.8,"to":13,"l":"03 medium-volume"},{"x":35.97,"y":5.18,"w":7.27,"hh":3.8,"to":14,"l":"04 low-volume"},{"x":45.28,"y":5.18,"w":5.74,"hh":3.8,"to":15,"l":"05 imaging"},{"x":53.05,"y":5.18,"w":5.74,"hh":3.8,"to":16,"l":"06 capping"},{"x":60.83,"y":5.18,"w":7.71,"hh":3.8,"to":17,"l":"07 unit-of-use"},{"x":70.58,"y":5.18,"w":6.93,"hh":3.8,"to":18,"l":"08 collation"},{"x":79.55,"y":5.18,"w":6.93,"hh":3.8,"to":19,"l":"09 packaging"},{"x":88.52,"y":5.18,"w":6.93,"hh":3.8,"to":20,"l":"10 sortation"},{"x":78.58,"y":12.23,"w":16.88,"hh":3.84,"to":10,"l":"\u2190 Back to stations overview"}]},{"n":12,"img":"slides/slide-12.png","video":"video/station-12.mp4","poster":"video/poster-12.jpg","title":"02 RoboPharma HV Wall","h":[{"x":5.54,"y":5.18,"w":7.7,"hh":3.8,"to":11,"l":"01 vial feeder"},{"x":15.28,"y":5.18,"w":7.7,"hh":3.8,"to":12,"l":"02   high-volume"},{"x":25.01,"y":5.18,"w":8.92,"hh":3.8,"to":13,"l":"03 medium-volume"},{"x":35.97,"y":5.18,"w":7.27,"hh":3.8,"to":14,"l":"04 low-volume"},{"x":45.28,"y":5.18,"w":5.74,"hh":3.8,"to":15,"l":"05 imaging"},{"x":53.05,"y":5.18,"w":5.74,"hh":3.8,"to":16,"l":"06 capping"},{"x":60.83,"y":5.18,"w":7.71,"hh":3.8,"to":17,"l":"07 unit-of-use"},{"x":70.58,"y":5.18,"w":6.93,"hh":3.8,"to":18,"l":"08 collation"},{"x":79.55,"y":5.18,"w":6.93,"hh":3.8,"to":19,"l":"09 packaging"},{"x":88.52,"y":5.18,"w":6.93,"hh":3.8,"to":20,"l":"10 sortation"},{"x":78.58,"y":12.23,"w":16.88,"hh":3.84,"to":10,"l":"\u2190 Back to stations overview"}]},{"n":13,"img":"slides/slide-13.jpg","title":"03 Medium-Volume Filling","h":[{"x":5.54,"y":5.18,"w":7.7,"hh":3.8,"to":11,"l":"01 vial feeder"},{"x":15.28,"y":5.18,"w":7.7,"hh":3.8,"to":12,"l":"02 high-volume"},{"x":25.01,"y":5.18,"w":8.92,"hh":3.8,"to":13,"l":"03   medium-volume"},{"x":35.97,"y":5.18,"w":7.27,"hh":3.8,"to":14,"l":"04 low-volume"},{"x":45.28,"y":5.18,"w":5.74,"hh":3.8,"to":15,"l":"05 imaging"},{"x":53.05,"y":5.18,"w":5.74,"hh":3.8,"to":16,"l":"06 capping"},{"x":60.83,"y":5.18,"w":7.71,"hh":3.8,"to":17,"l":"07 unit-of-use"},{"x":70.58,"y":5.18,"w":6.93,"hh":3.8,"to":18,"l":"08 collation"},{"x":79.55,"y":5.18,"w":6.93,"hh":3.8,"to":19,"l":"09 packaging"},{"x":88.52,"y":5.18,"w":6.93,"hh":3.8,"to":20,"l":"10 sortation"},{"x":78.58,"y":12.23,"w":16.88,"hh":3.84,"to":10,"l":"\u2190 Back to stations overview"}]},{"n":14,"img":"slides/slide-14.jpg","title":"04 Low-Volume Dispensing","h":[{"x":5.54,"y":5.18,"w":7.7,"hh":3.8,"to":11,"l":"01 vial feeder"},{"x":15.28,"y":5.18,"w":7.7,"hh":3.8,"to":12,"l":"02 high-volume"},{"x":25.01,"y":5.18,"w":8.92,"hh":3.8,"to":13,"l":"03 medium-volume"},{"x":35.97,"y":5.18,"w":7.27,"hh":3.8,"to":14,"l":"04   low-volume"},{"x":45.28,"y":5.18,"w":5.74,"hh":3.8,"to":15,"l":"05 imaging"},{"x":53.05,"y":5.18,"w":5.74,"hh":3.8,"to":16,"l":"06 capping"},{"x":60.83,"y":5.18,"w":7.71,"hh":3.8,"to":17,"l":"07 unit-of-use"},{"x":70.58,"y":5.18,"w":6.93,"hh":3.8,"to":18,"l":"08 collation"},{"x":79.55,"y":5.18,"w":6.93,"hh":3.8,"to":19,"l":"09 packaging"},{"x":88.52,"y":5.18,"w":6.93,"hh":3.8,"to":20,"l":"10 sortation"},{"x":78.58,"y":12.23,"w":16.88,"hh":3.84,"to":10,"l":"\u2190 Back to stations overview"}]},{"n":15,"img":"slides/slide-15.png","video":"video/station-15.mp4","poster":"video/poster-15.jpg","title":"05 Image Station (PV2)","h":[{"x":5.54,"y":5.18,"w":7.7,"hh":3.8,"to":11,"l":"01 vial feeder"},{"x":15.28,"y":5.18,"w":7.7,"hh":3.8,"to":12,"l":"02 high-volume"},{"x":25.01,"y":5.18,"w":8.92,"hh":3.8,"to":13,"l":"03 medium-volume"},{"x":35.97,"y":5.18,"w":7.27,"hh":3.8,"to":14,"l":"04 low-volume"},{"x":45.28,"y":5.18,"w":5.74,"hh":3.8,"to":15,"l":"05   imaging"},{"x":53.05,"y":5.18,"w":5.74,"hh":3.8,"to":16,"l":"06 capping"},{"x":60.83,"y":5.18,"w":7.71,"hh":3.8,"to":17,"l":"07 unit-of-use"},{"x":70.58,"y":5.18,"w":6.93,"hh":3.8,"to":18,"l":"08 collation"},{"x":79.55,"y":5.18,"w":6.93,"hh":3.8,"to":19,"l":"09 packaging"},{"x":88.52,"y":5.18,"w":6.93,"hh":3.8,"to":20,"l":"10 sortation"},{"x":78.58,"y":12.23,"w":16.88,"hh":3.84,"to":10,"l":"\u2190 Back to stations overview"}]},{"n":16,"img":"slides/slide-16.png","video":"video/station-16.mp4","poster":"video/poster-16.jpg","title":"06 Capping & Sealing","h":[{"x":5.54,"y":5.18,"w":7.7,"hh":3.8,"to":11,"l":"01 vial feeder"},{"x":15.28,"y":5.18,"w":7.7,"hh":3.8,"to":12,"l":"02 high-volume"},{"x":25.01,"y":5.18,"w":8.92,"hh":3.8,"to":13,"l":"03 medium-volume"},{"x":35.97,"y":5.18,"w":7.27,"hh":3.8,"to":14,"l":"04 low-volume"},{"x":45.28,"y":5.18,"w":5.74,"hh":3.8,"to":15,"l":"05 imaging"},{"x":53.05,"y":5.18,"w":5.74,"hh":3.8,"to":16,"l":"06   capping"},{"x":60.83,"y":5.18,"w":7.71,"hh":3.8,"to":17,"l":"07 unit-of-use"},{"x":70.58,"y":5.18,"w":6.93,"hh":3.8,"to":18,"l":"08 collation"},{"x":79.55,"y":5.18,"w":6.93,"hh":3.8,"to":19,"l":"09 packaging"},{"x":88.52,"y":5.18,"w":6.93,"hh":3.8,"to":20,"l":"10 sortation"},{"x":78.58,"y":12.23,"w":16.88,"hh":3.84,"to":10,"l":"\u2190 Back to stations overview"}]},{"n":17,"img":"slides/slide-17.png","video":"video/station-17.mp4","poster":"video/poster-17.jpg","title":"07 Unit-of-Use","h":[{"x":5.54,"y":5.18,"w":7.7,"hh":3.8,"to":11,"l":"01 vial feeder"},{"x":15.28,"y":5.18,"w":7.7,"hh":3.8,"to":12,"l":"02 high-volume"},{"x":25.01,"y":5.18,"w":8.92,"hh":3.8,"to":13,"l":"03 medium-volume"},{"x":35.97,"y":5.18,"w":7.27,"hh":3.8,"to":14,"l":"04 low-volume"},{"x":45.28,"y":5.18,"w":5.74,"hh":3.8,"to":15,"l":"05 imaging"},{"x":53.05,"y":5.18,"w":5.74,"hh":3.8,"to":16,"l":"06 capping"},{"x":60.83,"y":5.18,"w":7.71,"hh":3.8,"to":17,"l":"07   unit-of-use"},{"x":70.58,"y":5.18,"w":6.93,"hh":3.8,"to":18,"l":"08 collation"},{"x":79.55,"y":5.18,"w":6.93,"hh":3.8,"to":19,"l":"09 packaging"},{"x":88.52,"y":5.18,"w":6.93,"hh":3.8,"to":20,"l":"10 sortation"},{"x":78.58,"y":12.23,"w":16.88,"hh":3.84,"to":10,"l":"\u2190 Back to stations overview"}]},{"n":18,"img":"slides/slide-18.png","video":"video/station-18.mp4","poster":"video/poster-18.jpg","title":"08 Collation Station","h":[{"x":5.54,"y":5.18,"w":7.7,"hh":3.8,"to":11,"l":"01 vial feeder"},{"x":15.28,"y":5.18,"w":7.7,"hh":3.8,"to":12,"l":"02 high-volume"},{"x":25.01,"y":5.18,"w":8.92,"hh":3.8,"to":13,"l":"03 medium-volume"},{"x":35.97,"y":5.18,"w":7.27,"hh":3.8,"to":14,"l":"04 low-volume"},{"x":45.28,"y":5.18,"w":5.74,"hh":3.8,"to":15,"l":"05 imaging"},{"x":53.05,"y":5.18,"w":5.74,"hh":3.8,"to":16,"l":"06 capping"},{"x":60.83,"y":5.18,"w":7.71,"hh":3.8,"to":17,"l":"07 unit-of-use"},{"x":70.58,"y":5.18,"w":6.93,"hh":3.8,"to":18,"l":"08   collation"},{"x":79.55,"y":5.18,"w":6.93,"hh":3.8,"to":19,"l":"09 packaging"},{"x":88.52,"y":5.18,"w":6.93,"hh":3.8,"to":20,"l":"10 sortation"},{"x":78.58,"y":12.23,"w":16.88,"hh":3.84,"to":10,"l":"\u2190 Back to stations overview"}]},{"n":19,"img":"slides/slide-19.png","video":"video/station-19.mp4","poster":"video/poster-19.jpg","title":"09 Prescription Packaging","h":[{"x":5.54,"y":5.18,"w":7.7,"hh":3.8,"to":11,"l":"01 vial feeder"},{"x":15.28,"y":5.18,"w":7.7,"hh":3.8,"to":12,"l":"02 high-volume"},{"x":25.01,"y":5.18,"w":8.92,"hh":3.8,"to":13,"l":"03 medium-volume"},{"x":35.97,"y":5.18,"w":7.27,"hh":3.8,"to":14,"l":"04 low-volume"},{"x":45.28,"y":5.18,"w":5.74,"hh":3.8,"to":15,"l":"05 imaging"},{"x":53.05,"y":5.18,"w":5.74,"hh":3.8,"to":16,"l":"06 capping"},{"x":60.83,"y":5.18,"w":7.71,"hh":3.8,"to":17,"l":"07 unit-of-use"},{"x":70.58,"y":5.18,"w":6.93,"hh":3.8,"to":18,"l":"08 collation"},{"x":79.55,"y":5.18,"w":6.93,"hh":3.8,"to":19,"l":"09   packaging"},{"x":88.52,"y":5.18,"w":6.93,"hh":3.8,"to":20,"l":"10 sortation"},{"x":78.58,"y":12.23,"w":16.88,"hh":3.84,"to":10,"l":"\u2190 Back to stations overview"}]},{"n":20,"img":"slides/slide-20.png","video":"video/station-20.mp4","poster":"video/poster-20.jpg","title":"10 Auto-Sortation","h":[{"x":5.54,"y":5.18,"w":7.7,"hh":3.8,"to":11,"l":"01 vial feeder"},{"x":15.28,"y":5.18,"w":7.7,"hh":3.8,"to":12,"l":"02 high-volume"},{"x":25.01,"y":5.18,"w":8.92,"hh":3.8,"to":13,"l":"03 medium-volume"},{"x":35.97,"y":5.18,"w":7.27,"hh":3.8,"to":14,"l":"04 low-volume"},{"x":45.28,"y":5.18,"w":5.74,"hh":3.8,"to":15,"l":"05 imaging"},{"x":53.05,"y":5.18,"w":5.74,"hh":3.8,"to":16,"l":"06 capping"},{"x":60.83,"y":5.18,"w":7.71,"hh":3.8,"to":17,"l":"07 unit-of-use"},{"x":70.58,"y":5.18,"w":6.93,"hh":3.8,"to":18,"l":"08 collation"},{"x":79.55,"y":5.18,"w":6.93,"hh":3.8,"to":19,"l":"09 packaging"},{"x":88.52,"y":5.18,"w":6.93,"hh":3.8,"to":20,"l":"10   sortation"},{"x":78.58,"y":12.23,"w":16.88,"hh":3.84,"to":10,"l":"\u2190 Back to stations overview"}]},{"n":21,"img":"slides/slide-21.jpg","title":"Axona","h":[{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]},{"n":22,"img":"slides/slide-22.jpg","title":"What the platform does","h":[{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]},{"n":23,"img":"slides/slide-23.jpg","title":"Pharmacist verification","h":[{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]},{"n":24,"img":"slides/slide-24.jpg","title":"Axona on the floor","h":[{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]},{"n":25,"img":"slides/slide-25.jpg","title":"Actionable intelligence","h":[{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]},{"n":26,"img":"slides/slide-26.jpg","title":"Proven at scale","h":[{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]},{"n":27,"img":"slides/slide-27.jpg","title":"Grows with demand","h":[{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]},{"n":28,"img":"slides/slide-28.jpg","title":"Bring us your challenges","h":[{"x":73.29,"y":90.42,"w":6.22,"hh":3.8,"to":2,"l":"overview"},{"x":81.31,"y":90.42,"w":6.22,"hh":3.8,"to":10,"l":"stations"},{"x":89.33,"y":90.42,"w":4.57,"hh":3.8,"to":21,"l":"Axona"}]}];
+
+(function(){
+"use strict";
+
+var CFG = {
+  idleSeconds: 180,  // untouched this long -> quietly return to the title
+  homeSlide:   1
+};
+
+var qs = new URLSearchParams(location.search);
+if (qs.has('idle')) CFG.idleSeconds = parseInt(qs.get('idle'),10) || CFG.idleSeconds;
+if (qs.has('debug')) document.body.classList.add('debug');
+
+var stage = document.getElementById('stage'),
+    bg    = document.getElementById('bg'),
+    hots  = document.getElementById('hots'),
+    errEl = document.getElementById('err'),
+    plates = [document.getElementById('p0'), document.getElementById('p1')];
+
+var byN = {}, cur = 0, front = 0, idleTimer = null, failed = false;
+SLIDES.forEach(function(s){ byN[s.n] = s; });
+
+// Some Android WebViews ignore the muted *attribute* if it is parsed before a
+// src exists, and an unmuted video is refused autoplay outright. Force it.
+bg.muted = true; bg.defaultMuted = true; bg.playsInline = true;
+
+function playBg(){
+  var p = bg.play();
+  if (p && p.catch) p.catch(function(){});     // poster stays if still refused
+}
+
+/* ---------- navigation ---------- */
+function go(n){
+  var s = byN[n];
+  if (!s || n === cur) return;
+  cur = n;
+
+  // Crossfade to the other plate.
+  var back = plates[front ^ 1];
+  back.onload = function(){
+    back.classList.add('on');
+    plates[front].classList.remove('on');
+    front ^= 1;
+  };
+  back.onerror = function(){ fail(s.img); };
+  back.src = s.img;
+  back.alt = s.title || ('Slide ' + n);
+
+  // Retarget the single shared video element.
+  if (s.video){
+    if (bg.getAttribute('src') !== s.video){
+      bg.setAttribute('src', s.video);
+      if (s.poster) bg.setAttribute('poster', s.poster);
+      bg.load();
+      // load() interrupts an in-flight play() and Android rejects it with an
+      // AbortError -- the video then sits on its poster forever, which reads
+      // as "the videos don't work". Ask again once decoding is actually ready.
+      bg.addEventListener('canplay', playBg, {once:true});
+    }
+    bg.classList.add('on');
+    playBg();                                  // already-buffered case
+  } else {
+    bg.classList.remove('on');
+    try { bg.pause(); } catch(e){}
+  }
+
+  drawHotspots(s);
+}
+
+function next(){
+  // PowerPoint advances on any click that isn't a hyperlink. The deck depends
+  // on it: most slides carry only the three nav pills. Wrap at the end.
+  go(cur >= SLIDES.length ? 1 : cur + 1);
+}
+
+function drawHotspots(s){
+  hots.textContent = '';
+  var frag = document.createDocumentFragment();
+  s.h.forEach(function(h){
+    var b = document.createElement('button');
+    b.className = 'hot';
+    b.style.left   = h.x  + '%';
+    b.style.top    = h.y  + '%';
+    b.style.width  = h.w  + '%';
+    b.style.height = h.hh + '%';
+    b.setAttribute('aria-label', h.l || ('Go to slide ' + h.to));
+    b.addEventListener('click', function(e){
+      e.stopPropagation();
+      touched();
+      go(h.to);
+    });
+    frag.appendChild(b);
+  });
+  hots.appendChild(frag);
+}
+
+/* ---------- input: tap background = next, tap target = jump ---------- */
+stage.addEventListener('click', function(){ touched(); next(); });
+
+document.addEventListener('keydown', function(e){
+  var k = e.key;
+  if (k==='ArrowRight'||k==='PageDown'||k===' '){ touched(); next(); }
+  else if (k==='ArrowLeft'||k==='PageUp'){ touched(); go(cur<=1 ? SLIDES.length : cur-1); }
+  else if (k==='Home'){ touched(); go(CFG.homeSlide); }
+  else if (k==='f'){ fullscreen(); }
+});
+
+document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+
+/* ---------- idle reset ---------- */
+function touched(){
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(function(){ go(CFG.homeSlide); }, CFG.idleSeconds * 1000);
+}
+
+/* ---------- fullscreen + wake lock ---------- */
+function fullscreen(){
+  var el = document.documentElement;
+  try { (el.requestFullscreen || el.webkitRequestFullscreen || function(){}).call(el); } catch(e){}
+}
+document.addEventListener('touchend', fullscreen, {once:true});
+document.addEventListener('click',    fullscreen, {once:true});
+
+var lock = null;
+function keepAwake(){
+  if (!('wakeLock' in navigator)) return;
+  navigator.wakeLock.request('screen').then(function(l){ lock = l; }).catch(function(){});
+}
+document.addEventListener('visibilitychange', function(){
+  if (document.visibilityState === 'visible'){
+    keepAwake();
+    if (byN[cur] && byN[cur].video){ var p = bg.play(); if (p && p.catch) p.catch(function(){}); }
+  }
+});
+
+/* ---------- failure surface ---------- */
+function fail(src){
+  if (failed) return;
+  failed = true;
+  document.getElementById('errsrc').textContent = src;
+  errEl.classList.add('on');
+}
+
+/* ---------- boot ---------- *
+ * Draw slide 1 the moment it decodes. Nothing is gated behind a full preload,
+ * so the deck is usable immediately and a single bad asset can't wedge it.
+ * The rest warm in the background, hub first.                                */
+function warm(){
+  var order = [2, 10, 21].concat(SLIDES.map(function(s){ return s.n; }));
+  var i = 0;
+  (function step(){
+    if (i >= order.length) return;
+    var s = byN[order[i++]];
+    if (!s) return step();
+    var im = new Image();
+    im.onload = im.onerror = step;
+    im.src = s.img;
+  })();
+}
+
+/* ---------- offline cache ---------- *
+ * Served over HTTPS, so a service worker can hold the whole deck in the
+ * panel's own storage. After the first visit the network is only a formality.  */
+function installSW(){
+  if (!('serviceWorker' in navigator)) return;
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+
+  var box = document.getElementById('cache');
+  if (qs.has('cache')) document.body.classList.add('cache');
+
+  navigator.serviceWorker.addEventListener('message', function(e){
+    var m = e.data || {};
+    if (m.type !== 'PRECACHE_PROGRESS') return;
+    box.textContent = m.finished
+      ? 'CACHED — RUNS OFFLINE (' + m.done + ' FILES)'
+      : 'CACHING ' + m.done + ' / ' + m.total;
+    if (m.finished) box.classList.add('done');
+  });
+
+  navigator.serviceWorker.register('sw.js').then(function(){
+    return navigator.serviceWorker.ready;
+  }).then(function(reg){
+    var urls = ['./', './index.html'];
+    SLIDES.forEach(function(s){
+      urls.push(s.img);
+      if (s.video)  urls.push(s.video);
+      if (s.poster) urls.push(s.poster);
+    });
+    var target = reg.active || navigator.serviceWorker.controller;
+    if (target) target.postMessage({type:'PRECACHE', urls:urls});
+  }).catch(function(){});
+}
+
+go(CFG.homeSlide);
+touched();
+keepAwake();
+if (window.requestIdleCallback) requestIdleCallback(warm); else setTimeout(warm, 1200);
+setTimeout(installSW, 2000);   // let slide 1 paint before the bulk download starts
+
+})();
+</script>
+</body>
+</html>
