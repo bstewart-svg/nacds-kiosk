@@ -18,7 +18,7 @@
  *     whole point. Replacing an image means giving it a new name, or bumping
  *     CACHE below.
  */
-var CACHE = 'nacds-kiosk-v3';   // v3: slides re-exported from PowerPoint, +3 Axona HS slides
+var CACHE = 'nacds-kiosk-v4';   // v4: navigation pills restored
 
 var SHELL = ['./', './index.html', './slides/slide-01.jpg'];
 
