@@ -20,9 +20,9 @@ On screen it looks precisely like the PowerPoint.
 
 1. Open **https://bstewart-svg.github.io/nacds-kiosk/** in the panel's browser.
 2. Leave it on the title slide for about a minute on the Cradlepoint. It's downloading
-   the full 76 MB deck into the panel's own storage in the background.
+   the full ~86 MB deck into the panel's own storage in the background.
 3. To watch that happen, load **`…/nacds-kiosk/?cache`** instead — a readout appears at
-   the bottom and turns green at `CACHED — RUNS OFFLINE (46 FILES)`. Drop the `?cache`
+   the bottom and turns green at `CACHED — RUNS OFFLINE (49 FILES)`. Drop the `?cache`
    afterwards; the badge is hidden on the normal URL.
 
 Once cached, **the deck runs entirely from the panel and no longer needs the network.**
@@ -52,7 +52,7 @@ turn up in search results.
 index.html      the entire app — markup, styles, logic and all 181 tap targets
                 in one self-contained file
 sw.js           service worker; caches the deck for offline playback
-slides/         28 slide images at 3840 × 2160
+slides/         31 slide images at 3840 × 2160
                   .jpg = normal slides
                   .png = the 8 video slides (transparent, layered over video)
 video/          station-NN.mp4  — 8 backgrounds, H.264 1080p, audio stripped
@@ -62,8 +62,9 @@ slides-data.js  the editable tap-target source
 slides.json     same data, formatted for reading
 ```
 
-Slides 29–31 of the original (the hidden Axona health-systems slides) are not included,
-matching how the deck presents today.
+Slides 29–31 are the Axona health-systems slides, which sit at the end of the deck.
+They carry no `OVERVIEW / STATIONS / AXONA` pill in their artwork, so they have no tap
+targets — visitors page through them and slide 31 wraps back to the title.
 
 ---
 
@@ -154,4 +155,4 @@ ffmpeg -i in.mp4 -an -c:v libx264 -profile:v main -pix_fmt yuv420p -crf 21 -movf
   rest warm in the background, so one slow asset can't wedge the kiosk.
 - Source videos are 1080p and upscale to the 4K panel. Re-encoding to 4K would have
   quadrupled file size without adding real detail.
-- Total footprint about 76 MB.
+- Total footprint about 86 MB.
