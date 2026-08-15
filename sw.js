@@ -2,15 +2,24 @@
  *
  * The panel can't read local files, so the deck is served over HTTPS. That
  * would normally leave it hostage to trade-show wifi. This caches the whole
- * deck (~76 MB) into the device's own storage on first load; after that every
- * request is served locally and the network is irrelevant.
+ * deck (~76 MB) into the device's own storage; after that the network is only
+ * a formality.
  *
- * Bump CACHE when you change any asset, or the old copy will keep serving.
+ * Two different strategies, deliberately:
+ *
+ *   - index.html / sw.js  -> NETWORK FIRST, falling back to cache.
+ *     These change whenever the deck is edited. Cache-first here means a panel
+ *     that has already cached the deck never sees an update again, which is a
+ *     nasty way to find out at a show. Online, it always gets the current
+ *     build; offline, it falls back to the stored copy.
+ *
+ *   - slides / video      -> CACHE FIRST.
+ *     These are big and effectively immutable. Serving them from disk is the
+ *     whole point. Replacing an image means giving it a new name, or bumping
+ *     CACHE below.
  */
-var CACHE = 'nacds-kiosk-v1';
+var CACHE = 'nacds-kiosk-v2';
 
-// Just the shell on install, so activation is immediate. The heavy assets are
-// pulled afterwards in the background — see PRECACHE below.
 var SHELL = ['./', './index.html', './slides/slide-01.jpg'];
 
 self.addEventListener('install', function(e){
@@ -31,10 +40,34 @@ self.addEventListener('activate', function(e){
   );
 });
 
-/* Cache-first. Once an asset is stored the network is never consulted for it,
-   which is the whole point on a dead or congested show-floor connection. */
+function isDocument(req){
+  if (req.mode === 'navigate') return true;
+  var u = new URL(req.url);
+  return /\/$|index\.html$|\.js$/.test(u.pathname);
+}
+
 self.addEventListener('fetch', function(e){
   if (e.request.method !== 'GET') return;
+
+  if (isDocument(e.request)){
+    // network first
+    e.respondWith(
+      fetch(e.request).then(function(res){
+        if (res && res.status === 200 && res.type === 'basic'){
+          var copy = res.clone();
+          caches.open(CACHE).then(function(c){ c.put(e.request, copy); });
+        }
+        return res;
+      }).catch(function(){
+        return caches.match(e.request).then(function(hit){
+          return hit || caches.match('./index.html');
+        });
+      })
+    );
+    return;
+  }
+
+  // cache first for everything heavy
   e.respondWith(
     caches.match(e.request).then(function(hit){
       if (hit) return hit;
