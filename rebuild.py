@@ -119,6 +119,8 @@ HTML = r"""<!DOCTYPE html>
   }
   body.cache #cache{display:block}
   #cache.done{background:rgba(22,120,60,.9)}
+  #cache{transition:opacity .8s ease}
+  #cache.gone{opacity:0;pointer-events:none}
 
   /* ---- auto-play video layer ---- *
      The Vimeo loop covers the whole stage. The deck's own nav pill is painted
@@ -131,27 +133,34 @@ HTML = r"""<!DOCTYPE html>
 
   .deckpill{
     position:absolute;z-index:7;display:flex;align-items:center;
-    background:rgba(13,27,42,.88);border-radius:6vmin;
+    background:#0F1E35;border-radius:6vmin;   /* sampled from the deck's own pill */
     font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace;
-    font-size:1.32vmin;letter-spacing:.24em;text-transform:uppercase;
+    font-size:.86vmin;letter-spacing:.24em;text-transform:uppercase;
     color:#fff;white-space:nowrap;
   }
   .deckpill button{
     border:0;background:transparent;color:inherit;font:inherit;letter-spacing:inherit;
-    padding:1.15vmin 2.1vmin;border-radius:6vmin;cursor:pointer;
+    padding:.75vmin 1.37vmin;border-radius:6vmin;cursor:pointer;
     -webkit-appearance:none;appearance:none;
   }
   .deckpill button.on{background:#F39C12;color:#12233A}
   .deckpill button:active{background:rgba(243,156,18,.65);color:#12233A}
 
-  /* Start control. Centred along the bottom: the left corner carries the Capsa
-     logo lockup and the right carries the deck's own nav pill, so the middle is
-     the only strip that is clear on every overview slide. */
-  #autobtn{left:50%;transform:translateX(-50%);bottom:2.4%}
-  #autobtn.hide{display:none}
-  /* nav replica, sitting where the artwork's pill sits */
-  #autonav{right:5.6%;bottom:5.4%;display:none}
-  #autonav.on{display:flex}
+  /* The real navigation bar. It is laid over the three-item pill painted into
+     the artwork (measured at x 72.85-94.35%, y 90.00-94.63%) and is opaque, so
+     it hides it completely -- the printed pill only offers three destinations
+     and cannot reach the health-systems slides. Anchored to the same right
+     edge and baseline so it reads as the deck's own control, just wider. */
+  /* The printed three-item pill is gone from the artwork, so this doesn't need
+     to hide anything -- it just sits on the same baseline the pill used to
+     occupy (centred on y 92.3%), at 65% of the printed pill's height so it
+     stays out of the way of the copy on a 55" panel. */
+  #decknav{
+    right:5.3%;bottom:5.97%;height:3.45%;
+    padding:0;overflow:hidden;
+  }
+  #decknav button{display:flex;align-items:center;height:100%}
+  #decknav.hide{display:none}
 
   /* shown if the Vimeo player can't be reached */
   #autoerr{
@@ -183,12 +192,12 @@ HTML = r"""<!DOCTYPE html>
   <div id="auto"></div>
   <div id="autoerr">The auto-play video needs a network connection.<br>Tap a section below to browse the deck instead.</div>
 
-  <div class="deckpill" id="autobtn"><button type="button" id="autostart">&#9654; Auto Play</button></div>
-  <div class="deckpill" id="autonav">
+  <div class="deckpill" id="decknav">
     <button type="button" data-to="2">Overview</button>
     <button type="button" data-to="10">Stations</button>
     <button type="button" data-to="21">Axona</button>
-    <button type="button" id="autostop">&#9632; Stop</button>
+    <button type="button" data-to="29">HS</button>
+    <button type="button" id="autotoggle">&#9654; Autoplay</button>
   </div>
 </div>
 
@@ -264,15 +273,10 @@ function go(n){
   }
 
   drawHotspots(s);
-  updateAutoBtn(n);
+  updateNav(n);
 }
 
-/* Station pages (11-20) carry full-width cards along the bottom edge, so there
-   is nowhere clear to sit. The control returns as soon as you step back out. */
-function updateAutoBtn(n){
-  if (playing) return;
-  autoBtn.classList.toggle('hide', n >= 11 && n <= 20);
-}
+function prev(){ go(cur <= 1 ? SLIDES.length : cur - 1); }
 
 function next(){
   // PowerPoint advances on any click that isn't a hyperlink. The deck depends
@@ -311,8 +315,8 @@ var VIMEO_SRC = 'https://player.vimeo.com/video/' + VIMEO_ID +
 
 var autoEl   = document.getElementById('auto'),
     autoErr  = document.getElementById('autoerr'),
-    autoBtn  = document.getElementById('autobtn'),
-    autoNav  = document.getElementById('autonav'),
+    deckNav  = document.getElementById('decknav'),
+    autoTgl  = document.getElementById('autotoggle'),
     playing  = false;
 
 function enterAuto(){
@@ -335,8 +339,10 @@ function enterAuto(){
   }
 
   autoEl.classList.add('on');
-  autoNav.classList.add('on');
-  autoBtn.style.display = 'none';
+  deckNav.classList.remove('hide');      // the bar stays reachable over the video
+  setActive(null);
+  autoTgl.innerHTML = '&#9632; Stop';
+  autoTgl.classList.add('on');
   if (bg) { try { bg.pause(); } catch(e){} }
 }
 
@@ -345,8 +351,8 @@ function exitAuto(n){
   playing = false;
   autoEl.classList.remove('on');
   autoErr.classList.remove('on');
-  autoNav.classList.remove('on');
-  autoBtn.style.display = '';
+  autoTgl.innerHTML = '&#9654; Autoplay';
+  autoTgl.classList.remove('on');
   // Tear the iframe down so the video stops rather than playing on unseen.
   autoEl.textContent = '';
   window.__vimeoAlive = false;
@@ -365,31 +371,60 @@ window.addEventListener('message', function(e){
   }
 });
 
-document.getElementById('autostart').addEventListener('click', function(e){
-  e.stopPropagation(); touched(); enterAuto();
-});
-document.getElementById('autostop').addEventListener('click', function(e){
-  e.stopPropagation(); touched(); exitAuto(0);
-});
-[].forEach.call(autoNav.querySelectorAll('button[data-to]'), function(b){
+/* Which bar item is lit for a given slide. */
+function sectionOf(n){
+  if (n >= 2  && n <= 9)  return 2;    // overview
+  if (n >= 10 && n <= 20) return 10;   // stations, incl. every station page
+  if (n >= 21 && n <= 28) return 21;   // axona
+  if (n >= 29)            return 29;   // health systems
+  return null;                          // title slide
+}
+
+function setActive(to){
+  [].forEach.call(deckNav.querySelectorAll('button[data-to]'), function(b){
+    b.classList.toggle('on', parseInt(b.getAttribute('data-to'),10) === to);
+  });
+}
+
+/* Station pages carry their own strip across the top and their cards run to
+   the bottom edge, so the bar would sit on top of the copy. It returns the
+   moment you step back out. */
+function updateNav(n){
+  if (playing) return;
+  deckNav.classList.toggle('hide', n >= 11 && n <= 20);
+  setActive(sectionOf(n));
+}
+
+[].forEach.call(deckNav.querySelectorAll('button[data-to]'), function(b){
   b.addEventListener('click', function(e){
     e.stopPropagation(); touched();
-    exitAuto(parseInt(b.getAttribute('data-to'),10));
+    var to = parseInt(b.getAttribute('data-to'),10);
+    if (playing) { exitAuto(to); } else { go(to); }
   });
 });
 
-/* ---------- input: tap background = next, tap target = jump ---------- */
-stage.addEventListener('click', function(){
+autoTgl.addEventListener('click', function(e){
+  e.stopPropagation(); touched();
+  if (playing) exitAuto(0); else enterAuto();
+});
+
+/* ---------- input ---------- *
+ * Tapping a drawn button jumps. Tapping bare artwork pages the deck: the left
+ * third goes back, the rest goes forward. Forward gets the larger target
+ * because it is the common move -- and it keeps the deck's PowerPoint
+ * behaviour, where a click anywhere that is not a hyperlink advances.        */
+stage.addEventListener('click', function(e){
   touched();
   if (playing) { exitAuto(0); return; }   // any touch takes manual control
-  next();
+  var r = stage.getBoundingClientRect();
+  if ((e.clientX - r.left) < r.width / 3) prev(); else next();
 });
 
 document.addEventListener('keydown', function(e){
   var k = e.key;
   if (playing && k !== 'f'){ touched(); exitAuto(0); return; }
   if (k==='ArrowRight'||k==='PageDown'||k===' '){ touched(); next(); }
-  else if (k==='ArrowLeft'||k==='PageUp'){ touched(); go(cur<=1 ? SLIDES.length : cur-1); }
+  else if (k==='ArrowLeft'||k==='PageUp'){ touched(); prev(); }
   else if (k==='Home'){ touched(); go(CFG.homeSlide); }
   else if (k==='f'){ fullscreen(); }
 });
@@ -467,7 +502,12 @@ function installSW(){
     box.textContent = m.finished
       ? 'CACHED — RUNS OFFLINE (' + m.done + ' FILES)'
       : 'CACHING ' + m.done + ' / ' + m.total;
-    if (m.finished) box.classList.add('done');
+    if (m.finished){
+      box.classList.add('done');
+      // Say its piece, then get out of the way -- this readout is for booth
+      // setup, and nobody wants a green badge parked over the deck all show.
+      setTimeout(function(){ box.classList.add('gone'); }, 6000);
+    }
   });
 
   navigator.serviceWorker.register('sw.js').then(function(){

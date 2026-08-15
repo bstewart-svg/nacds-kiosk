@@ -18,7 +18,7 @@
  *     whole point. Replacing an image means giving it a new name, or bumping
  *     CACHE below.
  */
-var CACHE = 'nacds-kiosk-v4';   // v4: navigation pills restored
+var CACHE = 'nacds-kiosk-v5';   // v5: pill-free artwork + five-item HTML nav bar
 
 var SHELL = ['./', './index.html', './slides/slide-01.jpg'];
 

@@ -10,9 +10,13 @@ PowerPoint for Android cannot do.
 
 **The deck's own artwork is the interface.** No arrows, no progress dots, no home
 button, no "touch to explore" banner. Invisible tap targets sit exactly on the buttons
-already drawn into the slides — the `OVERVIEW / STATIONS / AXONA` pill, the ten station
-pills, the numbered floor markers, the station strip, and `← BACK TO STATIONS OVERVIEW`.
-On screen it looks precisely like the PowerPoint.
+already drawn into the slides — the ten station pills, the numbered floor markers, the
+station strip, and `← BACK TO STATIONS OVERVIEW`.
+
+The one exception is the **navigation bar** bottom-right: `OVERVIEW · STATIONS · AXONA ·
+HS · AUTOPLAY`. The deck's printed pill only offered three destinations and could not
+reach the health-systems slides, so the slide artwork is exported without it and the bar
+is drawn in HTML instead, in the deck's own colour and type at the same baseline.
 
 ---
 
@@ -62,9 +66,8 @@ slides-data.js  the editable tap-target source
 slides.json     same data, formatted for reading
 ```
 
-Slides 29–31 are the Axona health-systems slides, which sit at the end of the deck.
-They carry no `OVERVIEW / STATIONS / AXONA` pill in their artwork, so they have no tap
-targets — visitors page through them and slide 31 wraps back to the title.
+Slides 29–31 are the Axona health-systems slides at the end of the deck, reached by the
+`HS` item on the nav bar.
 
 ---
 
@@ -73,23 +76,23 @@ targets — visitors page through them and slide 31 wraps back to the title.
 **Tap a button** — every hyperlink from the PowerPoint works: the nav pill, the ten
 station pills and ten floor markers on the hub, the station strip, and the back link.
 
-**Tap anywhere else → next slide.** Deliberate. PowerPoint advances on any click that
-isn't a hyperlink, and the deck depends on it: slides 2–9 and 21–28 carry *only* the
-three nav pills, so without it there'd be no way to read the deck in order. The last
-slide wraps to the title.
+**Tap bare artwork to page the deck** — the left third goes back, the right two-thirds
+goes forward. Forward gets the larger target because it's the common move. This is also
+PowerPoint's own behaviour, where a click anywhere that isn't a hyperlink advances. The
+ends wrap.
 
 **Idle reset** — after 3 minutes with no touch it quietly returns to the title. Nothing
 animates or flashes; it's just ready for the next visitor. There's no auto-advancing
 attract loop — use `NACDS_PPT_2026_Auto.mp4` if you want an unattended video loop.
 
-**Auto Play** — the pill centred along the bottom starts the Vimeo loop
-(`vimeo.com/1218544080`) full-screen. While it runs, a replica of the
-`OVERVIEW / STATIONS / AXONA` pill stays on screen so staff can break straight
-into any section, plus a `■ STOP` button. Any touch anywhere also drops out into
-manual control at the current slide.
+**Auto Play** — the last item on the nav bar starts the Vimeo loop
+(`vimeo.com/1218544080`) full-screen and turns into `■ STOP`. The bar stays on screen
+over the video, so staff can break straight into any section. Any touch anywhere also
+drops out into manual control.
 
-The control is hidden on station pages (11–20), whose cards run to the bottom
-edge with no clear space. Step back out to the hub and it returns.
+The bar is hidden on station pages (11–20), whose cards run to the bottom edge with no
+clear space — those pages navigate by their own strip across the top. It returns as soon
+as you step back out.
 
 > The loop streams from Vimeo, so unlike the rest of the deck **it needs a live
 > connection** — it is the one thing the offline cache can't hold. If the video
@@ -105,7 +108,7 @@ edge with no clear space. Step back out to the hub and it returns.
 
 | Parameter | Default | What it does |
 |---|---|---|
-| `?cache` | hidden | Shows the offline-download readout. Use during setup. |
+| `?cache` | hidden | Shows the offline-download readout during setup; it fades out on its own once caching finishes. |
 | `?debug` | off | Lights every tap target in orange — checks alignment on the real panel |
 | `?idle=300` | `180` | Seconds of no touch before returning to the title |
 
