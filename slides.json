@@ -10,249 +10,49 @@
       "n": 2,
       "title": "Proven at scale",
       "img": "slides/slide-02.jpg",
-      "hotspots": [
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
-        }
-      ]
+      "hotspots": []
     },
     {
       "n": 3,
       "title": "One central fill",
       "img": "slides/slide-03.jpg",
-      "hotspots": [
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
-        }
-      ]
+      "hotspots": []
     },
     {
       "n": 4,
       "title": "Why we built it",
       "img": "slides/slide-04.jpg",
-      "hotspots": [
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
-        }
-      ]
+      "hotspots": []
     },
     {
       "n": 5,
       "title": "Purpose-built",
       "img": "slides/slide-05.jpg",
-      "hotspots": [
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
-        }
-      ]
+      "hotspots": []
     },
     {
       "n": 6,
       "title": "One wall",
       "img": "slides/slide-06.jpg",
-      "hotspots": [
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
-        }
-      ]
+      "hotspots": []
     },
     {
       "n": 7,
       "title": "Gen 6 High-Volume Cell",
       "img": "slides/slide-07.jpg",
-      "hotspots": [
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
-        }
-      ]
+      "hotspots": []
     },
     {
       "n": 8,
       "title": "Every form factor",
       "img": "slides/slide-08.jpg",
-      "hotspots": [
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
-        }
-      ]
+      "hotspots": []
     },
     {
       "n": 9,
       "title": "Unit-of-Use",
       "img": "slides/slide-09.jpg",
-      "hotspots": [
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
-        }
-      ]
+      "hotspots": []
     },
     {
       "n": 10,
@@ -418,30 +218,6 @@
           "w": 3.0,
           "h": 3.8,
           "label": "10"
-        },
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
         }
       ]
     },
@@ -1415,249 +1191,49 @@
       "n": 21,
       "title": "Axona",
       "img": "slides/slide-21.jpg",
-      "hotspots": [
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
-        }
-      ]
+      "hotspots": []
     },
     {
       "n": 22,
       "title": "What the platform does",
       "img": "slides/slide-22.jpg",
-      "hotspots": [
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
-        }
-      ]
+      "hotspots": []
     },
     {
       "n": 23,
       "title": "Pharmacist verification",
       "img": "slides/slide-23.jpg",
-      "hotspots": [
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
-        }
-      ]
+      "hotspots": []
     },
     {
       "n": 24,
       "title": "Axona on the floor",
       "img": "slides/slide-24.jpg",
-      "hotspots": [
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
-        }
-      ]
+      "hotspots": []
     },
     {
       "n": 25,
       "title": "Actionable intelligence",
       "img": "slides/slide-25.jpg",
-      "hotspots": [
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
-        }
-      ]
+      "hotspots": []
     },
     {
       "n": 26,
       "title": "Proven at scale",
       "img": "slides/slide-26.jpg",
-      "hotspots": [
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
-        }
-      ]
+      "hotspots": []
     },
     {
       "n": 27,
       "title": "Grows with demand",
       "img": "slides/slide-27.jpg",
-      "hotspots": [
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
-        }
-      ]
+      "hotspots": []
     },
     {
       "n": 28,
       "title": "Bring us your challenges",
       "img": "slides/slide-28.jpg",
-      "hotspots": [
-        {
-          "to": 2,
-          "x": 73.291,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "overview"
-        },
-        {
-          "to": 10,
-          "x": 81.309,
-          "y": 90.416,
-          "w": 6.222,
-          "h": 3.8,
-          "label": "stations"
-        },
-        {
-          "to": 21,
-          "x": 89.327,
-          "y": 90.416,
-          "w": 4.565,
-          "h": 3.8,
-          "label": "Axona"
-        }
-      ]
+      "hotspots": []
     },
     {
       "n": 29,
